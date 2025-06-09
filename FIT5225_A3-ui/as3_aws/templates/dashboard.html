@@ -1,0 +1,1395 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Monash Birdy Buddies{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-header {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 2rem;
+        font-weight: 600;
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1565c0;
+    }
+
+    .stat-label {
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    .card h3 {
+        color: #1565c0;
+        margin-bottom: 1.5rem;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .card h3::before {
+        content: '';
+        width: 4px;
+        height: 24px;
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+        margin-right: 12px;
+        border-radius: 2px;
+    }
+
+    .upload-zone {
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+
+    .upload-zone:hover {
+        border-color: #1565c0;
+        background: #e3f2fd;
+    }
+
+    .file-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .preview-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .preview-item .file-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .preview-item .delete-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: background 0.3s ease;
+    }
+
+    .preview-item .delete-btn:hover {
+        background: rgba(255, 0, 0, 1);
+    }
+
+    .clear-files-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        transition: background 0.3s ease;
+    }
+
+    .clear-files-btn:hover {
+        background: #c82333;
+    }
+
+    .recent-uploads {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .upload-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.3s ease;
+    }
+
+    .upload-item:hover {
+        background: #f8f9fa;
+    }
+
+    .upload-item-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+    }
+
+    .upload-item-details {
+        flex: 1;
+    }
+
+    .upload-item-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .upload-item-meta {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .action-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .action-card:hover {
+        border-color: #1565c0;
+        transform: translateY(-2px);
+    }
+
+    .action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .species-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .species-badge {
+        background: #1565c0;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 16px;
+        font-size: 0.875rem;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 0;
+        border: none;
+        border-radius: 12px;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    }
+
+    .modal-wide {
+        max-width: 1000px;
+        width: 90%;
+    }
+
+    .modal-header {
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 2rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+    }
+
+    .close:hover {
+        opacity: 0.7;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-style: italic;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Report specific styles */
+    .report-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #1565c0;
+    }
+
+    .report-section h3 {
+        color: #1565c0;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1565c0;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.5rem;
+    }
+
+    /* Tags management styles */
+    .tag-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #1565c0;
+    }
+
+    .tag-info {
+        flex: 1;
+    }
+
+    .tag-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .tag-meta {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    .tag-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-small {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-edit {
+        background: #4caf50;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-small:hover {
+        opacity: 0.8;
+    }
+
+    /* Map styles */
+    .location-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .location-item {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #4caf50;
+    }
+
+    .location-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .location-stats {
+        font-size: 0.875rem;
+        color: #666;
+    }
+
+    .location-species {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .location-species .species-badge {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Browser Translation Notice -->
+<div id="translationNotice" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px; display: none;">
+    <strong>📢 Notice:</strong> If you see content in other languages, your browser may be auto-translating this page. 
+    For the best experience, please disable auto-translation in your browser settings.
+    <button onclick="this.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">×</button>
+</div>
+
+<h2 class="welcome-header">Welcome back, {{ username }}! 🦜</h2>
+
+<!-- Statistics Dashboard -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_uploads if stats else 0 }}</div>
+        <div class="stat-label">Total Uploads</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.species_count if stats else 0 }}</div>
+        <div class="stat-label">Species Identified</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.monthly_uploads if stats else 0 }}</div>
+        <div class="stat-label">This Month</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.storage_gb if stats else 0 }} GB</div>
+        <div class="stat-label">Storage Used</div>
+    </div>
+</div>
+
+<!-- File Upload Section -->
+<div class="card">
+    <h3>📤 Upload Bird Media</h3>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="form-group">
+            <div class="upload-zone">
+                <label for="file" style="cursor: pointer;">
+                    <span style="font-size: 3rem;">📁</span><br>
+                    <strong>Choose files or drag & drop</strong><br>
+                    <small>Supports: Images (jpg, png), Videos (mp4, avi), Audio (mp3, wav)</small><br>
+                    <small style="color: #666; margin-top: 0.5rem;">💡 Tip: Click the × button on any file to remove it from upload</small>
+                </label>
+                <input type="file" id="file" name="file" multiple accept=".jpg,.jpeg,.png,.gif,.mp4,.avi,.mov,.mp3,.wav,.m4a" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Additional metadata fields -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" name="location" placeholder="e.g., Monash Clayton Campus">
+            </div>
+            <div class="filter-group">
+                <label for="date">Observation Date</label>
+                <input type="date" id="date" name="date">
+            </div>
+            <div class="filter-group">
+                <label for="notes">Notes</label>
+                <input type="text" id="notes" name="notes" placeholder="Additional observations">
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Upload & Auto-Tag</button>
+    </form>
+    <div id="uploadResult" style="margin-top: 1rem;"></div>
+    <div id="filePreview" class="file-preview"></div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="card">
+    <h3>🔍 Search Bird Database</h3>
+    <form id="searchForm">
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="species">Species</label>
+                <select id="species" name="species">
+                    <option value="">All Species</option>
+                    <option value="cockatoo">Cockatoo</option>
+                    <option value="kookaburra">Kookaburra</option>
+                    <option value="magpie">Magpie</option>
+                    <option value="rainbow_lorikeet">Rainbow Lorikeet</option>
+                    <option value="galah">Galah</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="mediaType">Media Type</label>
+                <select id="mediaType" name="mediaType">
+                    <option value="">All Types</option>
+                    <option value="image">Images</option>
+                    <option value="video">Videos</option>
+                    <option value="audio">Audio</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="dateRange">Date Range</label>
+                <select id="dateRange" name="dateRange">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn">Search</button>
+    </form>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <h3>⚡ Quick Actions</h3>
+    <div class="quick-actions">
+        <div class="action-card" onclick="generateReport()">
+            <div class="action-icon">📊</div>
+            <strong>Generate Report</strong>
+            <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Species statistics</p>
+        </div>
+        <div class="action-card" onclick="viewMap()">
+            <div class="action-icon">🗺️</div>
+            <strong>View Map</strong>
+            <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Observation locations</p>
+        </div>
+        <div class="action-card" onclick="exportData()">
+            <div class="action-icon">📥</div>
+            <strong>Export Data</strong>
+            <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Download CSV</p>
+        </div>
+        <div class="action-card" onclick="manageTags()">
+            <div class="action-icon">🏷️</div>
+            <strong>Manage Tags</strong>
+            <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Edit classifications</p>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Uploads -->
+<div class="card">
+    <h3>📋 Recent Uploads</h3>
+    <div class="recent-uploads" id="recentUploads">
+        <div class="upload-item">
+            <div class="upload-item-icon">🖼️</div>
+            <div class="upload-item-details">
+                <div class="upload-item-name">No recent uploads</div>
+                <div class="upload-item-meta">Start uploading to see your bird observations here</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results (Initially Hidden) -->
+<div class="card" id="searchResults" style="display: none;">
+    <h3>🔎 Search Results</h3>
+    <div id="resultContent"></div>
+</div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📊 Species Statistics Report</h2>
+            <span class="close" onclick="closeModal('reportModal')">&times;</span>
+        </div>
+        <div class="modal-body" id="reportContent">
+            <div class="loading">Generating report...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Modal -->
+<div id="mapModal" class="modal">
+    <div class="modal-content modal-wide">
+        <div class="modal-header">
+            <h2>🗺️ Observation Locations</h2>
+            <span class="close" onclick="closeModal('mapModal')">&times;</span>
+        </div>
+        <div class="modal-body" id="mapContent">
+            <div class="loading">Loading location data...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tags Management Modal -->
+<div id="tagsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🏷️ Manage Tags</h2>
+            <span class="close" onclick="closeModal('tagsModal')">&times;</span>
+        </div>
+        <div class="modal-body" id="tagsContent">
+            <div class="loading">Loading tags...</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global array to store selected files
+let selectedFiles = [];
+
+// File preview functionality
+function updateFilePreview() {
+    const previewContainer = document.getElementById('filePreview');
+    previewContainer.innerHTML = '';
+
+    if (selectedFiles.length === 0) {
+        return;
+    }
+
+    selectedFiles.forEach((file, index) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.setAttribute('data-file-index', index);
+
+        const deleteBtn = `<button class="delete-btn" onclick="removeFile(${index})" title="Remove file">×</button>`;
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    ${deleteBtn}
+                    <div class="file-info">
+                        <div>📸 ${file.name}</div>
+                        <div style="font-size: 0.75rem;">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type.startsWith('video/')) {
+            previewItem.innerHTML = `
+                <div style="background: #f0f0f0; height: 150px; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 3rem;">🎥</span>
+                </div>
+                ${deleteBtn}
+                <div class="file-info">
+                    <div>${file.name}</div>
+                    <div style="font-size: 0.75rem;">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+            `;
+        } else if (file.type.startsWith('audio/')) {
+            previewItem.innerHTML = `
+                <div style="background: #f0f0f0; height: 150px; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 3rem;">🎵</span>
+                </div>
+                ${deleteBtn}
+                <div class="file-info">
+                    <div>${file.name}</div>
+                    <div style="font-size: 0.75rem;">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+            `;
+        }
+
+        previewContainer.appendChild(previewItem);
+    });
+
+    // Add clear all button if there are files
+    if (selectedFiles.length > 0) {
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-files-btn';
+        clearBtn.textContent = `Clear All Files (${selectedFiles.length})`;
+        clearBtn.onclick = clearAllFiles;
+        previewContainer.appendChild(clearBtn);
+    }
+}
+
+// Remove single file
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    updateFilePreview();
+}
+
+// Clear all files
+function clearAllFiles() {
+    selectedFiles = [];
+    document.getElementById('file').value = '';
+    updateFilePreview();
+}
+
+// Handle file input change
+document.getElementById('file').addEventListener('change', function(e) {
+    const newFiles = Array.from(e.target.files);
+    selectedFiles = [...selectedFiles, ...newFiles];
+    updateFilePreview();
+});
+
+// Drag and drop functionality
+const uploadZone = document.querySelector('.upload-zone');
+const fileInput = document.getElementById('file');
+
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '#1565c0';
+    uploadZone.style.background = '#e3f2fd';
+});
+
+uploadZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '#cbd5e0';
+    uploadZone.style.background = '#f8f9fa';
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '#cbd5e0';
+    uploadZone.style.background = '#f8f9fa';
+
+    if (e.dataTransfer.files.length) {
+        const newFiles = Array.from(e.dataTransfer.files);
+        selectedFiles = [...selectedFiles, ...newFiles];
+        updateFilePreview();
+    }
+});
+
+// File upload handler - AWS Integration
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const location = document.getElementById('location').value;
+    const date = document.getElementById('date').value;
+    const notes = document.getElementById('notes').value;
+
+    if (!selectedFiles.length) {
+        alert('Please select at least one file');
+        return;
+    }
+
+    const uploadResult = document.getElementById('uploadResult');
+    uploadResult.innerHTML = '<div class="alert alert-info">🔄 Uploading and analyzing files...</div>';
+
+    try {
+        // Process each file
+        let allResults = [];
+        
+        for (let file of selectedFiles) {
+            // Determine file type and extension
+            const fileName = file.name;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+            let fileType = '';
+            
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                fileType = 'images';
+            } else if (['mp4', 'avi', 'mov'].includes(fileExtension)) {
+                fileType = 'videos';
+            } else if (['mp3', 'wav', 'm4a'].includes(fileExtension)) {
+                fileType = 'audios';
+            } else {
+                throw new Error(`Unsupported file type: ${fileExtension}`);
+            }
+
+            // 1. Get presigned URL
+            const urlResponse = await fetch('/api/presigned-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    file_type: fileType,
+                    file_extension: fileExtension
+                })
+            });
+
+            const urlResult = await urlResponse.json();
+            if (!urlResult.success) {
+                throw new Error(`Failed to get upload URL: ${urlResult.message}`);
+            }
+
+            // 2. Upload directly to S3
+            const s3Response = await fetch(urlResult.presigned_url, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            if (!s3Response.ok) {
+                throw new Error(`Failed to upload to S3: ${s3Response.statusText}`);
+            }
+
+            // 3. Notify backend to process AI detection
+            const processResponse = await fetch('/upload-aws', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    s3_url: urlResult.presigned_url.split('?')[0], // Remove query parameters
+                    original_filename: fileName,
+                    file_type: fileType.slice(0, -1), // Remove plural form 
+                    file_size: file.size,
+                    location: location,
+                    date: date,
+                    notes: notes
+                })
+            });
+
+            const processResult = await processResponse.json();
+            if (processResult.success) {
+                allResults.push(processResult);
+            } else {
+                console.error(`Processing failed for ${fileName}:`, processResult.message);
+            }
+        }
+
+        // Display results
+        if (allResults.length > 0) {
+            const allSpecies = [...new Set(allResults.flatMap(r => r.species || []))];
+            uploadResult.innerHTML = `
+                <div class="alert alert-success">
+                    ✅ Successfully uploaded and analyzed ${allResults.length} file(s)
+                    ${allSpecies.length > 0 ? `<div class="species-badges">Detected species: ${allSpecies.map(s => `<span class="species-badge">${s}</span>`).join('')}</div>` : ''}
+                </div>
+            `;
+            clearAllFiles();
+            updateRecentUploads(allResults);
+            updateStatistics();
+        } else {
+            uploadResult.innerHTML = '<div class="alert alert-error">❌ No files were processed successfully</div>';
+        }
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        uploadResult.innerHTML = `<div class="alert alert-error">❌ Upload failed: ${error.message}</div>`;
+        
+        // If AWS upload fails, fallback to local upload
+        console.log('Falling back to local upload...');
+        try {
+            // Store file names before clearing
+            const fileNames = selectedFiles.map(file => file.name);
+            
+            const formData = new FormData();
+            for (let i = 0; i < selectedFiles.length; i++) {
+                formData.append('files', selectedFiles[i]);
+            }
+            formData.append('location', location);
+            formData.append('date', date);
+            formData.append('notes', notes);
+
+            const fallbackResponse = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const fallbackResult = await fallbackResponse.json();
+            if (fallbackResult.success) {
+                uploadResult.innerHTML = `
+                    <div class="alert alert-warning">
+                        ⚠️ Used fallback upload: ${fallbackResult.message}
+                        ${fallbackResult.species ? `<div class="species-badges">Detected species: ${fallbackResult.species.map(s => `<span class="species-badge">${s}</span>`).join('')}</div>` : ''}
+                    </div>
+                `;
+                
+                // Create result structure for fallback upload
+                const fallbackResults = fileNames.map((fileName, index) => ({
+                    species: fallbackResult.species || [],
+                    file: { original_filename: fileName }
+                }));
+                
+                clearAllFiles();
+                updateRecentUploads(fallbackResults);
+                updateStatistics();
+            }
+        } catch (fallbackError) {
+            uploadResult.innerHTML = '<div class="alert alert-error">❌ Both AWS and local upload failed</div>';
+        }
+    }
+});
+
+// Search handler
+document.getElementById('searchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const species = document.getElementById('species').value;
+    const mediaType = document.getElementById('mediaType').value;
+    const dateRange = document.getElementById('dateRange').value;
+
+    try {
+        const response = await fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                species: species,
+                mediaType: mediaType,
+                dateRange: dateRange
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.style.display = 'block';
+
+            let resultsHTML = `<p>Found ${result.count} results</p><div class="file-preview">`;
+
+            result.files.forEach(file => {
+                resultsHTML += `
+                    <div class="preview-item">
+                        ${file.type === 'image' ? `<img src="${file.thumbnail}" alt="${file.name}">` :
+                          file.type === 'video' ? '<div style="background: #f0f0f0; height: 150px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 3rem;">🎥</span></div>' :
+                          '<div style="background: #f0f0f0; height: 150px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 3rem;">🎵</span></div>'}
+                        <div class="file-info">
+                            <div>${file.name}</div>
+                            <div style="font-size: 0.75rem;">${file.species} • ${file.date}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsHTML += '</div>';
+            document.getElementById('resultContent').innerHTML = resultsHTML;
+
+            // Smooth scroll to results
+            searchResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        alert('Search failed, please try again');
+    }
+});
+
+// Update recent uploads with real data
+function updateRecentUploads(uploadResults = null) {
+    const recentUploads = document.getElementById('recentUploads');
+    
+    if (uploadResults && uploadResults.length > 0) {
+        // Clear existing content if we have real results
+        recentUploads.innerHTML = '';
+        
+        uploadResults.forEach(result => {
+            const speciesText = result.species && result.species.length > 0 
+                ? result.species.join(', ') 
+                : 'Unknown species';
+            
+            const newUpload = `
+                <div class="upload-item">
+                    <div class="upload-item-icon">🖼️</div>
+                    <div class="upload-item-details">
+                        <div class="upload-item-name">${result.file?.original_filename || result.filename || 'Uploaded file'}</div>
+                        <div class="upload-item-meta">Uploaded just now • Species: ${speciesText}</div>
+                    </div>
+                </div>
+            `;
+            recentUploads.innerHTML += newUpload;
+        });
+    } else {
+        // Fallback to mock data if no results provided
+        const currentTime = new Date().toLocaleString();
+        const newUpload = `
+            <div class="upload-item">
+                <div class="upload-item-icon">🖼️</div>
+                <div class="upload-item-details">
+                    <div class="upload-item-name">bird_photo_${Date.now()}.jpg</div>
+                    <div class="upload-item-meta">Uploaded just now • Species: Analyzing...</div>
+                </div>
+            </div>
+        `;
+        recentUploads.innerHTML = newUpload + recentUploads.innerHTML;
+    }
+}
+
+// Update statistics (mock function)
+function updateStatistics() {
+    // This would fetch from the backend in a real application
+    const stats = document.querySelectorAll('.stat-number');
+    stats[0].textContent = parseInt(stats[0].textContent) + 1; // Total uploads
+    stats[2].textContent = parseInt(stats[2].textContent) + 1; // This month
+}
+
+// Load initial statistics and recent uploads
+async function loadDashboardData() {
+    try {
+        // Load statistics
+        const statsResponse = await fetch('/api/stats');
+        if (statsResponse.ok) {
+            const stats = await statsResponse.json();
+            // Update stat cards with real data
+            const statNumbers = document.querySelectorAll('.stat-number');
+            if (stats.total_uploads !== undefined) {
+                statNumbers[0].textContent = stats.total_uploads;
+            }
+            // Note: Other stats would need backend support
+        }
+        
+        // Load recent uploads
+        const uploadsResponse = await fetch('/api/recent-uploads');
+        if (uploadsResponse.ok) {
+            const uploads = await uploadsResponse.json();
+            if (uploads.success && uploads.uploads && uploads.uploads.length > 0) {
+                updateRecentUploads(uploads.uploads);
+            }
+        }
+    } catch (error) {
+        console.log('Could not load dashboard data:', error);
+    }
+}
+
+// Detect browser translation and show notice
+function detectTranslation() {
+    // Simple detection: check if page language doesn't match content
+    const htmlLang = document.documentElement.lang || 'en';
+    const isTranslated = document.querySelector('[translate="no"]') === null && 
+                        (navigator.language !== htmlLang || 
+                         document.body.getAttribute('translate') === 'yes');
+    
+    // Also check for common translation indicators
+    const hasTranslationElements = document.querySelector('font[color]') || 
+                                   document.querySelector('[class*="translate"]') ||
+                                   document.querySelector('[style*="background-color: rgb(255, 255, 102)"]');
+    
+    if (isTranslated || hasTranslationElements) {
+        document.getElementById('translationNotice').style.display = 'block';
+    }
+}
+
+// Load dashboard data when page loads
+window.addEventListener('load', () => {
+    loadDashboardData();
+    setTimeout(detectTranslation, 1000); // Delay to let translation happen
+});
+
+// Modal functions
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Generate Report Function
+async function generateReport() {
+    document.getElementById('reportModal').style.display = 'block';
+    document.getElementById('reportContent').innerHTML = '<div class="loading">Generating report...</div>';
+    
+    try {
+        const response = await fetch('/api/generate-report');
+        const result = await response.json();
+        
+        if (result.success) {
+            const report = result.report;
+            const reportHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${report.summary.total_files}</div>
+                        <div class="stat-label">Total Files</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${report.summary.unique_species}</div>
+                        <div class="stat-label">Unique Species</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${report.summary.locations_visited}</div>
+                        <div class="stat-label">Locations Visited</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${report.summary.total_storage_mb.toFixed(1)} MB</div>
+                        <div class="stat-label">Storage Used</div>
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h3>📊 File Types Distribution</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div>Images: <strong>${report.file_types.image}</strong></div>
+                        <div>Videos: <strong>${report.file_types.video}</strong></div>
+                        <div>Audio: <strong>${report.file_types.audio}</strong></div>
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h3>🐦 Top Species (Most Observed)</h3>
+                    <div>
+                        ${report.top_species.length > 0 ? 
+                            report.top_species.map(([species, count]) => 
+                                `<div style="margin-bottom: 0.5rem;"><span class="species-badge">${species}</span> ${count} observations</div>`
+                            ).join('') : 
+                            '<p style="color: #666; font-style: italic;">No species data available yet</p>'
+                        }
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h3>📅 Recent Activity</h3>
+                    <div>
+                        ${report.recent_activity.length > 0 ? 
+                            report.recent_activity.map(([month, count]) => 
+                                `<div style="margin-bottom: 0.5rem;">${month}: <strong>${count}</strong> uploads</div>`
+                            ).join('') : 
+                            '<p style="color: #666; font-style: italic;">No recent activity</p>'
+                        }
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h3>📍 Top Locations</h3>
+                    <div>
+                        ${report.locations.length > 0 ? 
+                            report.locations.slice(0, 5).map(([location, count]) => 
+                                `<div style="margin-bottom: 0.5rem;">${location}: <strong>${count}</strong> observations</div>`
+                            ).join('') : 
+                            '<p style="color: #666; font-style: italic;">No location data available</p>'
+                        }
+                    </div>
+                </div>
+                
+                <p style="text-align: center; color: #666; font-size: 0.875rem; margin-top: 2rem;">
+                    Report generated on ${new Date(report.generated_at).toLocaleString()}
+                </p>
+            `;
+            
+            document.getElementById('reportContent').innerHTML = reportHTML;
+        } else {
+            document.getElementById('reportContent').innerHTML = '<div class="alert alert-error">Failed to generate report: ' + result.message + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('reportContent').innerHTML = '<div class="alert alert-error">Error generating report. Please try again.</div>';
+    }
+}
+
+// Export Data Function
+function exportData() {
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = '/api/export-data';
+    link.download = 'bird_data_export.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success message
+    const successMsg = document.createElement('div');
+    successMsg.className = 'alert alert-success';
+    successMsg.innerHTML = '📥 Your data export is downloading...';
+    successMsg.style.position = 'fixed';
+    successMsg.style.top = '20px';
+    successMsg.style.right = '20px';
+    successMsg.style.zIndex = '1001';
+    document.body.appendChild(successMsg);
+    
+    setTimeout(() => {
+        document.body.removeChild(successMsg);
+    }, 3000);
+}
+
+// View Map Function
+async function viewMap() {
+    document.getElementById('mapModal').style.display = 'block';
+    document.getElementById('mapContent').innerHTML = '<div class="loading">Loading location data...</div>';
+    
+    try {
+        const response = await fetch('/api/view-map-data');
+        const result = await response.json();
+        
+        if (result.success) {
+            const locations = result.locations;
+            
+            if (locations.length === 0) {
+                document.getElementById('mapContent').innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <h3>📍 No Location Data Available</h3>
+                        <p>Start adding location information to your uploads to see them here!</p>
+                        <p style="font-size: 0.875rem; margin-top: 1rem;">
+                            💡 Tip: When uploading files, fill in the "Location" field to track where you spotted birds.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const mapHTML = `
+                <div style="margin-bottom: 1.5rem; text-align: center;">
+                    <strong>Found ${result.total_locations} observation locations</strong>
+                </div>
+                
+                <div class="location-list">
+                    ${locations.map(location => `
+                        <div class="location-item">
+                            <div class="location-name">📍 ${location.location}</div>
+                            <div class="location-stats">
+                                <div>${location.count} observations • ${location.species_count} species</div>
+                                <div style="margin-top: 0.25rem; color: #888;">
+                                    Latest: ${location.latest_observation ? new Date(location.latest_observation).toLocaleDateString() : 'Unknown'}
+                                </div>
+                            </div>
+                            <div class="location-species">
+                                ${location.species_list.slice(0, 5).map(species => 
+                                    `<span class="species-badge">${species}</span>`
+                                ).join('')}
+                                ${location.species_list.length > 5 ? 
+                                    `<span style="font-size: 0.75rem; color: #666;">+${location.species_list.length - 5} more</span>` : 
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                    <strong>🗺️ Interactive Map Coming Soon!</strong><br>
+                    <span style="font-size: 0.875rem; color: #666;">
+                        Future versions will include an interactive map view with pinpoint locations.
+                    </span>
+                </div>
+            `;
+            
+            document.getElementById('mapContent').innerHTML = mapHTML;
+        } else {
+            document.getElementById('mapContent').innerHTML = '<div class="alert alert-error">Failed to load location data: ' + result.message + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('mapContent').innerHTML = '<div class="alert alert-error">Error loading location data. Please try again.</div>';
+    }
+}
+
+// Manage Tags Function
+async function manageTags() {
+    document.getElementById('tagsModal').style.display = 'block';
+    document.getElementById('tagsContent').innerHTML = '<div class="loading">Loading tags...</div>';
+    
+    try {
+        const response = await fetch('/api/manage-tags');
+        const result = await response.json();
+        
+        if (result.success) {
+            const tags = result.tags;
+            
+            if (tags.length === 0) {
+                document.getElementById('tagsContent').innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <h3>🏷️ No Tags Available</h3>
+                        <p>Upload some files to automatically generate species tags, or create custom tags!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const tagsHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <strong>Managing ${result.total_tags} tags</strong>
+                    <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">
+                        Tags are automatically created when species are detected in your uploads.
+                    </p>
+                </div>
+                
+                <div>
+                    ${tags.map(tag => `
+                        <div class="tag-item">
+                            <div class="tag-info">
+                                <div class="tag-name">${tag.name}</div>
+                                <div class="tag-meta">
+                                    ${tag.category} • Used ${tag.usage_count} time${tag.usage_count !== 1 ? 's' : ''} • ${tag.type}
+                                </div>
+                            </div>
+                            <div class="tag-actions">
+                                ${tag.type === 'manual' ? `
+                                    <button class="btn-small btn-edit" onclick="editTag('${tag.name}')">Edit</button>
+                                    <button class="btn-small btn-delete" onclick="deleteTag('${tag.name}')">Remove</button>
+                                ` : `
+                                    <span style="font-size: 0.75rem; color: #666; padding: 0.25rem 0.5rem;">Auto-detected</span>
+                                `}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1rem; background: #f0f8ff; border-radius: 8px; text-align: center;">
+                    <button class="btn" onclick="addNewTag()" style="margin-right: 1rem;">+ Add Custom Tag</button>
+                    <button class="btn btn-secondary" onclick="bulkTagOperation()">Bulk Operations</button>
+                </div>
+            `;
+            
+            document.getElementById('tagsContent').innerHTML = tagsHTML;
+        } else {
+            document.getElementById('tagsContent').innerHTML = '<div class="alert alert-error">Failed to load tags: ' + result.message + '</div>';
+        }
+    } catch (error) {
+        document.getElementById('tagsContent').innerHTML = '<div class="alert alert-error">Error loading tags. Please try again.</div>';
+    }
+}
+
+// Tag management helper functions
+function editTag(tagName) {
+    const newName = prompt(`Rename tag "${tagName}" to:`, tagName);
+    if (newName && newName !== tagName) {
+        updateTag('rename', tagName, newName);
+    }
+}
+
+function deleteTag(tagName) {
+    if (confirm(`Remove tag "${tagName}" from all your uploads?`)) {
+        updateTag('remove', tagName);
+    }
+}
+
+function addNewTag() {
+    const tagName = prompt('Enter new tag name:');
+    if (tagName) {
+        updateTag('add', tagName);
+    }
+}
+
+async function updateTag(action, tagName, newTagName = null) {
+    try {
+        const response = await fetch('/api/manage-tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                tag_name: tagName,
+                new_tag_name: newTagName,
+                category: 'general'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            manageTags(); // Reload tags
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error updating tag. Please try again.');
+    }
+}
+
+function bulkTagOperation() {
+    alert('Bulk tag operations will be available in a future update!\n\nFor now, you can:\n• Use the new API endpoints for bulk operations\n• Edit individual tags using the buttons above');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modals = ['reportModal', 'mapModal', 'tagsModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

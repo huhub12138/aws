@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ForgotPasswordModal from './ForgotPasswordModal';
+import './AuthStyles.css';
+
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Email format validation
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Password format validation
+  const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  // Form validation
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Email cannot be empty';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password cannot be empty';
+    } else if (!validatePassword(formData.password)) {
+      newErrors.password = 'Password must be at least 8 characters and contain uppercase, lowercase and numbers';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear corresponding field error
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  // Simulate Cognito login
+  const handleLogin = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Simulate user credential verification
+      if (formData.email === 'test@example.com' && formData.password === 'Test1234') {
+        // Generate mock JWT Token
+        const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE2MzYwMDAwMDB9.mock-signature';
+        localStorage.setItem('jwtToken', mockToken);
+        localStorage.setItem('userEmail', formData.email);
+
+        // Redirect to upload page
+        navigate('/upload');
+      } else {
+        setErrors({ general: 'Invalid username or password' });
+      }
+    } catch (error) {
+      setErrors({ general: 'Login failed, please try again later' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleLogin();
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1 className="auth-title">BirdTag System</h1>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {errors.general && (
+            <div className="error-message">{errors.general}</div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="email">Email *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={errors.email ? 'error' : ''}
+              placeholder="Please enter email"
+            />
+            {errors.email && (
+              <span className="field-error">{errors.email}</span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password *</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className={errors.password ? 'error' : ''}
+              placeholder="Please enter password"
+            />
+            {errors.password && (
+              <span className="field-error">{errors.password}</span>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={loading}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+
+        <div className="auth-links">
+          <a href="/register" className="auth-link">
+            Switch to Register
+          </a>
+          <button
+            className="auth-link forgot-password"
+            onClick={() => setShowForgotPassword(true)}
+          >
+            Forgot Password
+          </button>
+        </div>
+      </div>
+
+      {showForgotPassword && (
+        <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />
+      )}
+    </div>
+  );
+};
+
+export default LoginPage;
