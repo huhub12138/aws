@@ -1,0 +1,10 @@
+roboflow 
+ultralytics 
+supervision
+# avoid install unnecessary libs
+opencv-python-headless
+matplotlib
+numpy
+requests
+# aws sdk (S3 bucket and dynamnoDB interaction)
+boto3
