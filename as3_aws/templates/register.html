@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Model Playground{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+
+    .register-icon {
+        text-align: center;
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .password-requirements {
+        background: #f7fafc;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .password-requirements ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .password-requirements li {
+        padding: 0.25rem 0;
+        color: #718096;
+    }
+
+    .password-requirements li::before {
+        content: "✓ ";
+        color: #cbd5e0;
+        font-weight: bold;
+    }
+
+    .password-requirements li.met::before {
+        color: #00b894;
+    }
+
+    .auth-link {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .auth-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .auth-link a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <div class="register-icon">🎉</div>
+    <h2>Create Your Account</h2>
+    <div id="alertMessage"></div>
+    <form id="registerForm">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Choose a username" required autofocus>
+        </div>
+
+        <div class="form-group">
+            <label for="password1">Password</label>
+            <input type="password" id="password1" name="password1" placeholder="Create a strong password" required>
+            <div class="password-requirements">
+                <strong>Password Requirements:</strong>
+                <ul id="passwordChecklist">
+                    <li id="lengthCheck">At least 6 characters</li>
+                    <li id="uppercaseCheck">Contains uppercase letter</li>
+                    <li id="lowercaseCheck">Contains lowercase letter</li>
+                    <li id="numberCheck">Contains number</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password2">Confirm Password</label>
+            <input type="password" id="password2" name="password2" placeholder="Re-enter your password" required>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%;">Create Account</button>
+
+        <div class="auth-link">
+            <a href="{{ url_for('login') }}">Already have an account? Sign In</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password validation visual feedback
+document.getElementById('password1').addEventListener('input', function(e) {
+    const password = e.target.value;
+
+    // Check length
+    document.getElementById('lengthCheck').classList.toggle('met', password.length >= 6);
+
+    // Check uppercase
+    document.getElementById('uppercaseCheck').classList.toggle('met', /[A-Z]/.test(password));
+
+    // Check lowercase
+    document.getElementById('lowercaseCheck').classList.toggle('met', /[a-z]/.test(password));
+
+    // Check number
+    document.getElementById('numberCheck').classList.toggle('met', /\d/.test(password));
+});
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value;
+    const password1 = document.getElementById('password1').value;
+    const password2 = document.getElementById('password2').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Creating Account...';
+
+    try {
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password1: password1,
+                password2: password2
+            })
+        });
+
+        const result = await response.json();
+        const alertDiv = document.getElementById('alertMessage');
+
+        if (result.success) {
+            alertDiv.innerHTML = '<div class="alert alert-success">✅ Registration successful! Redirecting to login...</div>';
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        } else {
+            alertDiv.innerHTML = `<div class="alert alert-error">❌ ${result.message}</div>`;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Create Account';
+        }
+    } catch (error) {
+        document.getElementById('alertMessage').innerHTML = '<div class="alert alert-error">❌ An error occurred. Please try again.</div>';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Create Account';
+    }
+});
+</script>
+{% endblock %}
